@@ -1,55 +1,38 @@
 import streamlit as st
 import requests
-import pandas as pd
-import plotly.express as px
 from datetime import datetime
 
 # Configuração da página
-st.set_page_config(page_title="Painel de Criptomoedas", layout="wide")
+st.set_page_config(page_title="🌤️ Dashboard Climático", layout="centered")
 
 # Título
-st.title("📊 Painel de Criptomoedas em Tempo Real")
+st.title("🌤️ Dashboard Climático com OpenWeatherMap API")
 
-# Sidebar para seleção de moeda e número de criptomoedas
-st.sidebar.header("Configurações")
-moeda = st.sidebar.selectbox("Moeda", ["usd", "eur", "brl"])
-quantidade = st.sidebar.slider("Número de criptomoedas", min_value=5, max_value=50, value=10)
+# Entrada do usuário
+cidade = st.text_input("Digite o nome da cidade:", "Natal")
 
-# Função para obter dados da API
-@st.cache_data(ttl=300)
-def obter_dados(moeda, quantidade):
-    url = "https://api.coingecko.com/api/v3/coins/markets"
-    params = {
-        "vs_currency": moeda,
-        "order": "market_cap_desc",
-        "per_page": quantidade,
-        "page": 1,
-        "sparkline": False
-    }
-    resposta = requests.get(url, params=params)
+# Chave da API (substitua pela sua chave real)
+api_key = "SUA_CHAVE_API"
+
+# Função para obter dados climáticos
+def obter_dados_climaticos(cidade, api_key):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={api_key}&lang=pt_br&units=metric"
+    resposta = requests.get(url)
     if resposta.status_code == 200:
-        dados = resposta.json()
-        df = pd.DataFrame(dados)
-        df = df[["name", "symbol", "current_price", "market_cap", "price_change_percentage_24h"]]
-        df.columns = ["Nome", "Símbolo", f"Preço ({moeda.upper()})", "Capitalização de Mercado", "Variação 24h (%)"]
-        return df
+        return resposta.json()
     else:
-        st.error("Erro ao obter dados da API.")
-        return pd.DataFrame()
+        return None
 
-# Obter dados
-df = obter_dados(moeda, quantidade)
-
-# Exibir dados em tabela
-if not df.empty:
-    st.subheader("📈 Dados das Criptomoedas")
-    st.dataframe(df, use_container_width=True)
-
-    # Gráfico de variação percentual
-    st.subheader("📉 Variação Percentual nas Últimas 24h")
-    fig = px.bar(df, x="Nome", y="Variação 24h (%)", color="Variação 24h (%)",
-                 color_continuous_scale=["red", "green"], height=500)
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Última atualização
-    st.caption(f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+# Botão para buscar dados
+if st.button("Buscar"):
+    dados = obter_dados_climaticos(cidade, api_key)
+    if dados:
+        st.subheader(f"Clima em {cidade.title()} - {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        st.write(f"**Descrição:** {dados['weather'][0]['description'].capitalize()}")
+        st.write(f"**Temperatura:** {dados['main']['temp']} °C")
+        st.write(f"**Sensação Térmica:** {dados['main']['feels_like']} °C")
+        st.write(f"**Umidade:** {dados['main']['humidity']}%")
+        st.write(f"**Velocidade do Vento:** {dados['wind']['speed']} m/s")
+    else:
+        st.error("Cidade não encontrada ou erro na requisição.")
+        
