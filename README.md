@@ -33,6 +33,4 @@ if st.button("Buscar"):
         st.write(f"**Sensação Térmica:** {dados['main']['feels_like']} °C")
         st.write(f"**Umidade:** {dados['main']['humidity']}%")
         st.write(f"**Velocidade do Vento:** {dados['wind']['speed']} m/s")
-    else:
-        st.error("Cidade não encontrada ou erro na requisição.")
-        
+           
